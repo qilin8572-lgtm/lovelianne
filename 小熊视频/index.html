@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>🎁 张嫣仪小姐的包裹</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: "PingFang SC", system-ui, sans-serif;
+            padding: 0;
+            margin: 0;
+        }
+        #app {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            aspect-ratio: 9 / 16;
+            background: #ffffff;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
+        }
+        .layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background: #ffffff;
+        }
+        .layer.active {
+            display: flex;
+        }
+        .layer video,
+        .layer img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            background: #ffffff;
+        }
+        .hint {
+            position: absolute;
+            bottom: -48px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 500;
+            color: #e07090;
+            letter-spacing: 1.5px;
+            padding: 8px 0;
+            background: transparent;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            text-shadow: 0 2px 12px rgba(255, 255, 255, 0.8);
+        }
+        .hint.show {
+            bottom: 16px;
+            pointer-events: auto;
+        }
+        .hint.tap-head {
+            color: #d47b9e;
+            font-weight: 600;
+        }
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            padding: 32px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: #fffaf7;
+            border-radius: 28px;
+            padding: 32px 24px 24px;
+            max-width: 340px;
+            width: 100%;
+            box-shadow: 0 24px 64px rgba(120, 60, 80, 0.25);
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255, 210, 225, 0.3);
+        }
+        .modal-box p {
+            font-size: 18px;
+            line-height: 1.7;
+            color: #4d2e3a;
+            text-align: center;
+            font-weight: 500;
+            margin-bottom: 24px;
+        }
+        .modal-box .btn-primary {
+            display: block;
+            width: 100%;
+            padding: 14px 0;
+            border: none;
+            border-radius: 60px;
+            background: linear-gradient(135deg, #f5a0b5, #ec6a8a);
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 6px 24px rgba(236, 106, 138, 0.35);
+            letter-spacing: 2px;
+        }
+        .modal-box .btn-primary:active {
+            transform: scale(0.94);
+        }
+        .scroll-text-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 30;
+            padding: 20px;
+        }
+        .scroll-text-wrapper.active {
+            display: flex;
+        }
+        .scroll-text-container {
+            width: 80%;
+            max-width: 360px;
+            height: 60%;
+            overflow-y: auto;
+            background: rgba(255, 245, 240, 0.5);
+            border-radius: 20px;
+            padding: 20px 18px;
+            border: 1px solid rgba(255, 200, 215, 0.25);
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .scroll-text-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .scroll-text-container::-webkit-scrollbar-track {
+            background: rgba(200, 150, 165, 0.15);
+            border-radius: 8px;
+        }
+        .scroll-text-container::-webkit-scrollbar-thumb {
+            background: #f0a0b8;
+            border-radius: 8px;
+        }
+        .scroll-text-content {
+            font-size: 17px;
+            line-height: 2;
+            color: #4d2e3a;
+            font-weight: 400;
+            white-space: pre-wrap;
+            word-break: break-word;
+            letter-spacing: 0.5px;
+        }
+        .scroll-hint {
+            margin-top: 14px;
+            font-size: 15px;
+            color: #c07a90;
+            font-weight: 500;
+            opacity: 0.8;
+            animation: pulseHint 2s ease-in-out infinite;
+        }
+        @keyframes popIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.85) translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        @keyframes pulseHint {
+            0%,
+            100% {
+                opacity: 0.5;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+        @media (max-width: 420px) {
+            .modal-box p {
+                font-size: 16px;
+            }
+            .scroll-text-content {
+                font-size: 15px;
+            }
+            .hint {
+                font-size: 14px;
+                bottom: -42px;
+            }
+            .hint.show {
+                bottom: 12px;
+            }
+        }
+
+        /* 视频播放遮罩（保证用户手势触发） */
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            cursor: pointer;
+            color: #fff;
+            font-size: 20px;
+            font-weight: 500;
+            letter-spacing: 2px;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            border-radius: 0;
+        }
+        .video-overlay.hidden {
+            display: none;
+        }
+        .video-overlay span {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 12px 28px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+
+        <!-- ====== 步骤1：视频1 ====== -->
+        <div id="step-video1" class="layer active">
+            <video id="video1" src="video1.mp4" muted playsinline webkit-playsinline></video>
+            <div class="video-overlay" id="overlay1"><span>▶ 点击播放</span></div>
+        </div>
+
+        <!-- ====== 步骤2：图片1 + 点击任意处 ====== -->
+        <div id="step-img1" class="layer">
+            <img src="pic1.png" alt="图片1" />
+            <div class="hint show" id="hint-img1">✨ 点击任意处继续 ✨</div>
+        </div>
+
+        <!-- ====== 步骤3：视频2 ====== -->
+        <div id="step-video2" class="layer">
+            <video id="video2" src="video2.mp4" muted playsinline webkit-playsinline></video>
+            <div class="video-overlay" id="overlay2"><span>▶ 点击播放</span></div>
+        </div>
+
+        <!-- ====== 步骤4：弹窗 ====== -->
+        <div class="modal-overlay" id="modal-package">
+            <div class="modal-box">
+                <p>📦 请问是张嫣仪小姐吗，<br />这里有您的包裹。</p>
+                <button class="btn-primary" id="btn-receive">📬 查收</button>
+            </div>
+        </div>
+
+        <!-- ====== 步骤5：图片2 + 点击任意处 ====== -->
+        <div id="step-img2" class="layer">
+            <img src="pic2.png" alt="图片2" />
+            <div class="hint show" id="hint-img2">✨ 点击任意处继续 ✨</div>
+        </div>
+
+        <!-- ====== 步骤6：图片3 + 点击任意处 ====== -->
+        <div id="step-img3" class="layer">
+            <img src="pic3.png" alt="图片3" />
+            <div class="hint show" id="hint-img3">✨ 点击任意处继续 ✨</div>
+        </div>
+
+        <!-- ====== 步骤7：图片4 + "这里有一封信" ====== -->
+        <div id="step-img4" class="layer">
+            <img src="pic4.png" alt="图片4" />
+            <div class="hint show" id="hint-img4">💌 这里有一封信！点击任意处 ✨</div>
+        </div>
+
+        <!-- ====== 步骤8：图片5 + 滑动文本 ====== -->
+        <div id="step-img5" class="layer">
+            <img src="pic5.png" alt="图片5" />
+            <div class="scroll-text-wrapper active" id="scrollWrapper">
+                <div class="scroll-text-container" id="scrollContainer">
+                    <div class="scroll-text-content" id="scrollContent">
+                        1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
+                    </div>
+                </div>
+                <div class="scroll-hint" id="scrollHint">👇 滑到底部继续 👇</div>
+            </div>
+        </div>
+
+        <!-- ====== 步骤10：视频3 + 点击小熊的头 ====== -->
+        <div id="step-video3" class="layer">
+            <video id="video3" src="video3.mp4" muted playsinline webkit-playsinline></video>
+            <div class="video-overlay" id="overlay3"><span>▶ 点击播放</span></div>
+            <div class="hint show tap-head" id="hint-video3">🐻 请摸摸害羞的小熊的头吧 · 点击上半部分</div>
+        </div>
+
+        <!-- ====== 步骤11：视频4 ====== -->
+        <div id="step-video4" class="layer">
+            <video id="video4" src="video4.mp4" muted playsinline webkit-playsinline></video>
+            <div class="video-overlay" id="overlay4"><span>▶ 点击播放</span></div>
+        </div>
+
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ============================================================
+            //  1. 获取所有元素
+            // ============================================================
+            const stepVideo1 = document.getElementById('step-video1');
+            const stepImg1 = document.getElementById('step-img1');
+            const stepVideo2 = document.getElementById('step-video2');
+            const stepImg2 = document.getElementById('step-img2');
+            const stepImg3 = document.getElementById('step-img3');
+            const stepImg4 = document.getElementById('step-img4');
+            const stepImg5 = document.getElementById('step-img5');
+            const stepVideo3 = document.getElementById('step-video3');
+            const stepVideo4 = document.getElementById('step-video4');
+
+            const video1 = document.getElementById('video1');
+            const video2 = document.getElementById('video2');
+            const video3 = document.getElementById('video3');
+            const video4 = document.getElementById('video4');
+
+            const overlay1 = document.getElementById('overlay1');
+            const overlay2 = document.getElementById('overlay2');
+            const overlay3 = document.getElementById('overlay3');
+            const overlay4 = document.getElementById('overlay4');
+
+            const modal = document.getElementById('modal-package');
+            const btnReceive = document.getElementById('btn-receive');
+
+            const scrollWrapper = document.getElementById('scrollWrapper');
+            const scrollContainer = document.getElementById('scrollContainer');
+            const scrollHint = document.getElementById('scrollHint');
+
+            // ============================================================
+            //  2. 工具函数
+            // ============================================================
+            function showLayer(layer) {
+                const layers = document.querySelectorAll('.layer');
+                layers.forEach(l => l.classList.remove('active'));
+                modal.classList.remove('active');
+                scrollWrapper.classList.remove('active');
+                if (layer) layer.classList.add('active');
+                console.log('📍 切换到:', layer ? layer.id : 'null');
+            }
+
+            // 播放视频：先显示遮罩，点击后播放
+            function setupVideoWithOverlay(videoEl, overlayEl, onEndCallback) {
+                // 移除旧监听
+                overlayEl.onclick = null;
+                videoEl.onended = null;
+
+                // 点击遮罩播放视频
+                overlayEl.onclick = function() {
+                    console.log('▶️ 用户点击播放:', videoEl.id);
+                    overlayEl.classList.add('hidden');
+                    videoEl.currentTime = 0;
+                    videoEl.play()
+                        .then(() => {
+                            console.log('✅ 视频播放中:', videoEl.id);
+                        })
+                        .catch((e) => {
+                            console.warn('⚠️ 播放失败:', videoEl.id, e.message);
+                            // 如果播放失败，允许用户再次点击重试
+                            overlayEl.classList.remove('hidden');
+                        });
+                };
+
+                // 视频结束回调
+                videoEl.onended = function() {
+                    console.log('⏹️ 视频结束:', videoEl.id);
+                    videoEl.onended = null;
+                    if (onEndCallback) onEndCallback();
+                };
+            }
+
+            // ============================================================
+            //  3. 初始化所有视频（带遮罩）
+            // ============================================================
+            setupVideoWithOverlay(video1, overlay1, function() {
+                console.log('➡️ 视频1结束 → 显示图片1');
+                showLayer(stepImg1);
+            });
+
+            setupVideoWithOverlay(video2, overlay2, function() {
+                console.log('📦 视频2结束 → 显示弹窗');
+                modal.classList.add('active');
+            });
+
+            setupVideoWithOverlay(video3, overlay3, function() {
+                console.log('🐻 视频3结束 → 停留在视频3层（等待点击头部）');
+                showLayer(stepVideo3);
+                // 确保遮罩是隐藏的（视频已播放完）
+                overlay3.classList.add('hidden');
+            });
+
+            setupVideoWithOverlay(video4, overlay4, function() {
+                console.log('🎉 视频4结束！全部流程完成！');
+                // 可以留一个结束画面
+            });
+
+            // ============================================================
+            //  4. 步骤流程
+            // ============================================================
+
+            // 页面加载后，默认显示视频1，遮罩可见，等待用户点击
+            showLayer(stepVideo1);
+            overlay1.classList.remove('hidden');
+
+            // ---------- 步骤2：图片1 点击 → 视频2 ----------
+            stepImg1.addEventListener('click', function() {
+                console.log('🖱️ 点击图片1 → 切换到视频2');
+                showLayer(stepVideo2);
+                overlay2.classList.remove('hidden'); // 显示遮罩，等待点击
+            });
+
+            // ---------- 步骤4：弹窗 查收 → 图片2 ----------
+            btnReceive.addEventListener('click', function() {
+                console.log('📬 点击查收 → 图片2');
+                modal.classList.remove('active');
+                showLayer(stepImg2);
+            });
+
+            // ---------- 步骤5：图片2 → 图片3 ----------
+            stepImg2.addEventListener('click', function() {
+                console.log('🖱️ 点击图片2 → 图片3');
+                showLayer(stepImg3);
+            });
+
+            // ---------- 步骤6：图片3 → 图片4 ----------
+            stepImg3.addEventListener('click', function() {
+                console.log('🖱️ 点击图片3 → 图片4');
+                showLayer(stepImg4);
+            });
+
+            // ---------- 步骤7：图片4 → 图片5 + 滑动文本 ----------
+            stepImg4.addEventListener('click', function() {
+                console.log('🖱️ 点击图片4 → 图片5 + 滑动文本');
+                showLayer(stepImg5);
+                scrollWrapper.classList.add('active');
+                scrollContainer.scrollTop = 0;
+                scrollHint.style.display = 'block';
+                scrollContainer.onscroll = null;
+
+                scrollContainer.onscroll = function() {
+                    const threshold = 5;
+                    const bottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer
+                        .clientHeight;
+                    if (bottom <= threshold) {
+                        console.log('📜 滑动到底部');
+                        scrollHint.textContent = '✨ 点击任意处继续 ✨';
+                        scrollHint.style.color = '#e07090';
+                        const goNext = function() {
+                            console.log('🖱️ 点击滑动底部 → 切换到视频3');
+                            scrollWrapper.classList.remove('active');
+                            showLayer(stepVideo3);
+                            overlay3.classList.remove('hidden'); // 显示遮罩，等待点击
+                            document.removeEventListener('click', goNext);
+                            scrollContainer.onscroll = null;
+                        };
+                        document.addEventListener('click', goNext, { once: true });
+                        scrollHint.style.animation = 'pulseHint 1s ease-in-out infinite';
+                    }
+                };
+            });
+
+            // ---------- 步骤10：点击视频3上半部分 → 视频4 ----------
+            stepVideo3.addEventListener('click', function(e) {
+                const rect = stepVideo3.getBoundingClientRect();
+                const clickY = e.clientY - rect.top;
+                const halfHeight = rect.height / 2;
+
+                // 如果遮罩是显示的，说明视频还没播放，点击应该触发播放而不是切视频4
+                if (!overlay3.classList.contains('hidden')) {
+                    console.log('🖱️ 点击遮罩播放视频3');
+                    overlay3.click();
+                    return;
+                }
+
+                // 视频已播放完，判断是否点击上半部分
+                if (clickY <= halfHeight) {
+                    console.log('✅ 点击上半部分 → 切换到视频4');
+                    showLayer(stepVideo4);
+                    overlay4.classList.remove('hidden'); // 显示遮罩，等待点击
+                } else {
+                    const hint = document.getElementById('hint-video3');
+                    hint.textContent = '🐻 要点小熊的头哦～上半部分 ✨';
+                    setTimeout(() => {
+                        hint.textContent = '🐻 请摸摸害羞的小熊的头吧 · 点击上半部分';
+                    }, 1500);
+                }
+            });
+
+            // ============================================================
+            //  5. 防滚动 & 初始化
+            // ============================================================
+            document.body.style.overflow = 'hidden';
+            document.getElementById('app').addEventListener('touchmove', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+
+            console.log('🎁 张嫣仪小姐的包裹已加载完成！');
+            console.log('📌 所有视频都需要点击遮罩播放（符合浏览器策略）');
+
+        })();
+    </script>
+
+</body>
+</html>
